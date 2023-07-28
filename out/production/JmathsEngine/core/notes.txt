@@ -1,0 +1,21 @@
+\ -> reverse slash, for line breaking when you're feeling lazy to just add another println.
+| -> latin iota (is that what it's called?), for char "or" condition.
+|| -> double latin iota(still in doubt), for string "or" condition.
+
+by removing the one operand limit on the operations in the post fix solver
+any operation can be made to accept multiple operands, 
+for example : 
+            (2,3) + (4,5)
+            this expression right now throws an exception, since the brackets provide 
+            multiple operands in place of a single operand
+
+but this limit can be easily removed, the reason I'm keeping it is just for convenience,
+coz i don't really see any use of this. However, in case if this restriction needs to be removed,
+it can be done in the following ways :
+since multiple operands is being passed in from both left and right side,
+I'll need a new function like this 
+                                    void function(operand[] lefts, operand[] rights)
+or for unary operations
+                        void function(operand[] singles)
+
+and now, remove the restriction in the postFix solver function in the parser. That's all.
