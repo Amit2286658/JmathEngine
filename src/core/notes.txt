@@ -19,3 +19,5 @@ or for unary operations
                         void function(operand[] singles)
 
 and now, remove the restriction in the postFix solver function in the parser. That's all.
+
+ The fuck how this git works... it's so confusing, probably more confusing than the programming itself.
