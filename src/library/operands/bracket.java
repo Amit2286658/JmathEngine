@@ -2,16 +2,15 @@ package library.operands;
 
 import core.interfaces.operand;
 import core.interfaces.operation;
-import core.interfaces.scanner;
+import library.scan_operand_adapter;
 import library.operations.seperator;
 
 import static core.CONSTANTS.*;
 import static library.CONSTANTS.*;
 
-public class bracket implements scanner, operand {
+public class bracket extends scan_operand_adapter {
 
     public String value;
-    StringBuilder builder = new StringBuilder();
     boolean scanning = false;
 
     Object[] compiled;
@@ -19,27 +18,29 @@ public class bracket implements scanner, operand {
     boolean pushOnStack = true;
 
     int bracket_count = 0;
+
+    public bracket(){
+        //empty
+    }
+
     @Override
     public int scan(char c) {
         if (c == '('){
             bracket_count++;
             if (!scanning){
                 scanning = true;
-                return CONTINUE;
+                return _LOCK_;
             }
-            builder.append(c);
             return CONTINUE;
         }else if (c == ')'){
             bracket_count--;
             if (bracket_count == 0){
                 scanning = false;
-                return DONE;
+                return RELEASE;
             }
-            builder.append(c);
             return CONTINUE;
         }else {
             if (scanning){
-                builder.append(c);
                 return CONTINUE;
             }else {
                 return IGNORE;
@@ -48,16 +49,19 @@ public class bracket implements scanner, operand {
     }
 
     @Override
-    public Object getScannedObject() {
-        bracket str = new bracket();
-        str.value = builder.toString();
-        builder.setLength(0);
-        return str;
+    public int getLength() {
+        return this.compiled.length;
     }
 
     @Override
-    public int getOperandType() {
-        return OPERAND_TYPE_GROUP;
+    public Object getScannedObject() {
+        if (pushOnStack)
+            return this.compiled[0];
+
+        bracket br = new bracket();
+        br.pushCompiledObjects(compiled);
+        br.pushOnStack = this.pushOnStack;
+        return br;
     }
 
     @Override
@@ -66,19 +70,28 @@ public class bracket implements scanner, operand {
     }
 
     @Override
-    public boolean pushOnStack() {
-        return pushOnStack;
+    public operand[] getOperands() {
+        return (operand[]) this.compiled;
     }
 
     @Override
     public void pushCompiledObjects(Object[] objects) {
         this.compiled = objects;
-        for(Object obj : objects){
-            if (obj instanceof operation op && op instanceof seperator){
-                pushOnStack = false;
-                break;
-            }
-        }
+    }
+
+    @Override
+    public void pushPostFixedObjects(Object[] objects) {
+        this.compiled = objects;
+    }
+
+    @Override
+    public void pushEvaluatedObjects(operand[] objects) {
+        this.compiled = objects;
+    }
+
+    @Override
+    public boolean pushOnStack_whenSingleElement() {
+        return true;
     }
 
     @Override
@@ -92,12 +105,14 @@ public class bracket implements scanner, operand {
     }
 
     @Override
-    public String displayString() {
-        return value;
-    }
-
-    @Override
-    public void pushSolvedOperands(operand[] operands) {
-        
+    public void pushSubCompiledParts(Object[] parts) {
+        pushOnStack = parts.length == 1;
+        this.compiled = parts;
+        for(Object obj : parts){
+            if (obj instanceof operation op && op instanceof seperator){
+                pushOnStack = false;
+                break;
+            }
+        }
     }
 }

@@ -2,16 +2,15 @@ package library.operations;
 
 import core.ExpressionException;
 import core.interfaces.operand;
-import core.interfaces.operation;
-import core.interfaces.scanner;
 
 import library.operands.real;
+import library.scan_operation_adapter;
 import library.operands.iota;
 
 import static core.CONSTANTS.*;
 import static library.CONSTANTS.*;
 
-public class decreement implements scanner, operation{
+public class decreement extends scan_operation_adapter{
 
     int symbol_count = 0;
 
@@ -28,28 +27,8 @@ public class decreement implements scanner, operation{
     }
 
     @Override
-    public int getResultFlag() {
-        return RESULT_SINGLE;
-    }
-
-    @Override
-    public operand getSingleResult() {
-        return opnd;
-    }
-
-    @Override
-    public operand[] getMultipleResult() {
-        return null;
-    }
-
-    @Override
-    public void function(operand[] params) {
-        //empty
-    }
-
-    @Override
-    public void function(operand left, operand right) {
-        // empty
+    public operand[] getResult() {
+        return new operand[]{opnd};
     }
 
     @Override
@@ -75,14 +54,17 @@ public class decreement implements scanner, operation{
     public int scan(char c) {
         if (c == '-'){
             symbol_count++;
+            if (symbol_count == 1){
+                return LOCK;
+            }
             return CONTINUE;
         }else {
             if (symbol_count == 2){
                 symbol_count = 0;
-                return _DONE_;
+                return _RELEASE_;
             }else if (symbol_count != 0){
                 symbol_count = 0;
-                return BREAK;
+                return INTERRUPT;
             }
             return IGNORE;
         }

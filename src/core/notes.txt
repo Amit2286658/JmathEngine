@@ -13,11 +13,11 @@ but this limit can be easily removed, the reason I'm keeping it is just for conv
 coz i don't really see any use of this. However, in case if this restriction needs to be removed,
 it can be done in the following ways :
 since multiple operands is being passed in from both left and right side,
-I'll need a new function like this 
+I'll need a new function like this :
                                     void function(operand[] lefts, operand[] rights)
-or for unary operations
-                        void function(operand[] singles)
+or for unary operations :
+                         void function(operand[] singles)
 
 and now, remove the restriction in the postFix solver function in the parser. That's all.
 
- The fuck how this git works... it's so confusing, probably more confusing than the programming itself.
+The fuck how this git works... it's so confusing, probably more confusing than the programming itself.

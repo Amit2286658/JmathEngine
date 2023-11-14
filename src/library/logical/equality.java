@@ -1,4 +1,4 @@
-package library.operations;
+package library.logical;
 
 import library.scan_operation_adapter;
 import library.operands.complex_number;
@@ -9,20 +9,18 @@ import core.interfaces.operand;
 import static core.CONSTANTS.*;
 import static library.CONSTANTS.*;
 
-public class addition extends scan_operation_adapter{
+public class equality extends scan_operation_adapter{
 
     StringBuilder builder = new StringBuilder();
     boolean scanning = false;
 
     int symbol_count = 0;
 
-    operand resultOperand;
-
-    double value;
+    operand retOperand;
 
     @Override
     public int getPrecedence() {
-        return PRECEDENCE_LEAST;
+        return PRECEDENCE_MEDIUM;
     }
 
     @Override
@@ -36,57 +34,74 @@ public class addition extends scan_operation_adapter{
             case REAL -> {
                 switch(right.getIdentity()){
                     case REAL -> {
-                        resultOperand = left;
-                        ((real)left).value += ((real)right).value;
+                        real l = ((real)left);
+                        real r = ((real)right);
+                        if (l.value == r.value)
+                            l.value = 1;
+                        else
+                            l.value = 0;
+                        retOperand = l;
                     }
                     case IOTA -> {
-                        complex_number cn = new complex_number();
-                        cn.real_value = ((real)left).value;
-                        cn.iota_value = ((iota)right).value;
-                        resultOperand = cn;
+                        real l = ((real)left);
+                        l.value = 0;
+                        retOperand = l;
                     }
                     case COMPLEX_NUMBER -> {
-                        complex_number cn = (complex_number)right;
-                        cn.real_value += ((real)left).value;
-                        resultOperand = cn;
+                        real l = ((real)left);
+                        l.value = 0;
+                        retOperand = l;
                     }
                 }
             }
             case IOTA -> {
                 switch(right.getIdentity()){
                     case REAL -> {
-                        complex_number cn = new complex_number();
-                        cn.real_value = ((real)right).value;
-                        cn.iota_value = ((iota)left).value;
-                        resultOperand = cn;
+                        real r = ((real)right);
+                        r.value = 0;
+                        retOperand = r;
                     }
                     case IOTA -> {
-                        resultOperand = left;
-                        ((iota)left).value += ((iota)right).value;
+                        iota l = ((iota)left);
+                        iota r = ((iota)right);
+                        real rl = new real();
+                        if (l.value == r.value)
+                            rl.value = 1;
+                        else
+                            rl.value = 0;
+                        retOperand = rl;
                     }
                     case COMPLEX_NUMBER -> {
-                        complex_number cn = (complex_number)right;
-                        cn.iota_value += ((iota)left).value;
-                        resultOperand = cn;
+                        real rl = new real();
+                        rl.value = 0;
+                        retOperand = rl;
                     }
                 }
             }
             case COMPLEX_NUMBER -> {
                 switch(right.getIdentity()){
                     case REAL -> {
-                        ((complex_number)left).real_value += ((real)right).value;
-                        resultOperand = left;
+                        real rl = new real();
+                        rl.value = 0;
+                        retOperand = rl;
                     }
                     case IOTA -> {
-                        ((complex_number)left).iota_value += ((iota)right).value;
-                        resultOperand = left;
+                        real rl = new real();
+                        rl.value = 0;
+                        retOperand = rl;
                     }
                     case COMPLEX_NUMBER -> {
-                        complex_number cn = (complex_number)right;
-                        complex_number cn_l = (complex_number)left;
-                        cn_l.real_value += cn.real_value;
-                        cn_l.iota_value += cn.iota_value;
-                        resultOperand = cn_l;
+                        real rl = new real();
+
+                        complex_number cl = (complex_number)left;
+                        complex_number cr = (complex_number)right;
+                        if (cl.real_value == cr.real_value && 
+                                cl.iota_value == cr.iota_value)
+                            rl.value = 1;
+                        else
+                            rl.value = 0;
+
+                        retOperand = rl;
                     }
                 }
             }
@@ -95,7 +110,7 @@ public class addition extends scan_operation_adapter{
 
     @Override
     public int scan(char c) {
-        if (c == '+'){
+        if (c == '='){
             symbol_count++;
             if (symbol_count == 1){
                 return LOCK;
@@ -121,7 +136,7 @@ public class addition extends scan_operation_adapter{
     @Override
     public operand[] getResult() {
         return new operand[]{
-            resultOperand
+            retOperand
         };
     }
 }

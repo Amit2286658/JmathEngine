@@ -1,12 +1,13 @@
 package library.operands;
 
-import core.interfaces.operand;
-import core.interfaces.scanner;
+import library.scan_adapter;
 
 import static core.CONSTANTS.*;
 import static library.CONSTANTS.*;
 
-public class real implements scanner, operand{
+import core.interfaces.operand;
+
+public class real extends scan_adapter implements operand{
 
     StringBuilder builder = new StringBuilder();
 
@@ -21,11 +22,6 @@ public class real implements scanner, operand{
     }
 
     @Override
-    public int getOperandType() {
-        return OPERAND_TYPE_SINGULAR;
-    }
-
-    @Override
     public int getIdentity() {
         return REAL;
     }
@@ -36,22 +32,24 @@ public class real implements scanner, operand{
             if (scanning){
                 value = Double.parseDouble(builder.toString());
                 scanning = false;
-                return DONE;
+                return RELEASE;
             }else 
                 return IGNORE;
         }
         if ((c + "").matches("[0-9e.]")){
             if ((c + "").matches("[e.]") && !scanning)
                 return IGNORE;
-            if (!scanning)
-                scanning = true;
             builder.append(c);
+            if (!scanning){
+                scanning = true;
+                return LOCK;
+            }
             return CONTINUE;
         }else if (c == 'i'){
             if (scanning){
                 builder.setLength(0);
                 scanning = false;
-                return BREAK;
+                return INTERRUPT;
             }
             else
                 return IGNORE;
@@ -61,7 +59,7 @@ public class real implements scanner, operand{
                 String num = builder.toString();
                 builder.setLength(0);
                 value = Double.parseDouble(num);
-                return _DONE_;
+                return _RELEASE_;
             }else 
                 return IGNORE;
         }
@@ -77,16 +75,6 @@ public class real implements scanner, operand{
     }
 
     @Override
-    public boolean pushOnStack() {
-        return false;
-    }
-
-    @Override
-    public void pushCompiledObjects(Object[] operands) {
-        return;
-    }
-
-    @Override
     public String getString() {
         if (value % 1 != 0){
             return value + "";
@@ -94,21 +82,5 @@ public class real implements scanner, operand{
             String[] two = (value + "").split("\\.");
             return two[0];
         }
-    }
-
-    @Override
-    public Object[] getCompiledObjects() {
-        return null;
-    }
-
-    @Override
-    public String displayString() {
-        return getString();
-    }
-
-    @Override
-    public void pushSolvedOperands(operand[] operands) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'pushSolvedOperands'");
     }
 }

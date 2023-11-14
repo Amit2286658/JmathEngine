@@ -1,12 +1,12 @@
 package library.operands;
 
-import core.interfaces.operand;
-import core.interfaces.scanner;
-
 import static core.CONSTANTS.*;
 import static library.CONSTANTS.*;
 
-public class iota implements scanner, operand{
+import core.interfaces.operand;
+import library.scan_adapter;
+
+public class iota extends scan_adapter implements operand{
 
     private StringBuilder builder = new StringBuilder();
 
@@ -20,11 +20,6 @@ public class iota implements scanner, operand{
 
     public iota(double value){
         this.value = value;
-    }
-
-    @Override
-    public int getOperandType() {
-        return OPERAND_TYPE_SINGULAR;
     }
 
     @Override
@@ -43,35 +38,27 @@ public class iota implements scanner, operand{
     }
 
     @Override
-    public boolean pushOnStack() {
-        return false;
-    }
-
-    @Override
-    public void pushCompiledObjects(Object[] operands) {
-        return;
-    }
-
-    @Override
     public int scan(char c) {
         if (c == 'i' && scanning) {
             scanning = false;
             value = Double.parseDouble(builder.toString());
-            return DONE;
+            return RELEASE;
         }
         if ((c + "").matches("[0-9e.]")) {
             if ((c + "").matches("[e.]") && !scanning)
                 return IGNORE;
-            if (!scanning)
-                scanning = true;
             builder.append(c);
+            if (!scanning){
+                scanning = true;
+                return LOCK;
+            }
             return CONTINUE;
         }
 
         if (scanning){
             builder.setLength(0);
             scanning = false;
-            return BREAK;
+            return INTERRUPT;
         }else 
             return IGNORE;
     }
@@ -83,21 +70,4 @@ public class iota implements scanner, operand{
         builder.setLength(0);
         return i;
     }
-
-    @Override
-    public Object[] getCompiledObjects() {
-        return null;
-    }
-
-    @Override
-    public String displayString() {
-        return getString();
-    }
-
-    @Override
-    public void pushSolvedOperands(operand[] operands) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'pushSolvedOperands'");
-    }
-    
 }

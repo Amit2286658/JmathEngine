@@ -1,8 +1,7 @@
 package library.operations;
 
 import core.interfaces.operand;
-import core.interfaces.operation;
-import core.interfaces.scanner;
+import library.scan_operation_adapter;
 import library.operands.complex_number;
 import library.operands.iota;
 import library.operands.real;
@@ -10,7 +9,7 @@ import library.operands.real;
 import static core.CONSTANTS.*;
 import static library.CONSTANTS.*;
 
-public class subtraction implements scanner, operation{
+public class subtraction extends scan_operation_adapter{
 
     StringBuilder builder = new StringBuilder();
     boolean scanning = false;
@@ -34,14 +33,17 @@ public class subtraction implements scanner, operation{
     public int scan(char c) {
         if (c == '-'){
             symbol_count++;
+            if (symbol_count == 1){
+                return LOCK;
+            }
             return CONTINUE;
         }else {
             if (symbol_count == 1){
                 symbol_count = 0;
-                return _DONE_;
+                return _RELEASE_;
             }else if (symbol_count != 0){
                 symbol_count = 0;
-                return BREAK;
+                return INTERRUPT;
             }
             return IGNORE;
         }
@@ -122,27 +124,7 @@ public class subtraction implements scanner, operation{
     }
 
     @Override
-    public void function(operand single) {
-        // empty
-    }
-
-    @Override
-    public void function(operand[] params) {
-        // empty
-    }
-
-    @Override
-    public int getResultFlag() {
-        return RESULT_SINGLE;
-    }
-
-    @Override
-    public operand getSingleResult() {
-        return resultOperand;
-    }
-
-    @Override
-    public operand[] getMultipleResult() {
-        return null;
+    public operand[] getResult() {
+        return new operand[]{resultOperand};
     }
 }

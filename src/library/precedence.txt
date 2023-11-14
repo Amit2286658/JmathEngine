@@ -1,0 +1,14 @@
+PRECEDENCE_LEAST = 1
+PRECEDENCE_MEDIUM = 250
+PRECEDENCE_MAX = 500
+PRECEDENCE_FUNCTION = 1000
+
+addition = 1
+subtraction = 1
+increement = 2
+decreement = 2
+multiply = 250
+exponent = 250
+factorial = 251
+seperator = 0
+

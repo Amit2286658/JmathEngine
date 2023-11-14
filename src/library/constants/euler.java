@@ -1,11 +1,11 @@
 package library.constants;
 
-import core.interfaces.scanner;
+import library.scan_adapter;
 import library.operands.real;
 
 import static core.CONSTANTS.*;
 
-public class euler implements scanner{
+public class euler extends scan_adapter{
 
     boolean found = false;
     @Override
@@ -13,15 +13,15 @@ public class euler implements scanner{
         if (c == 'e'){
             if (!found)
                 found = true;
-            return CONTINUE;
+            return LOCK;
         }else {
             if (found){
                 if (Character.isDigit(c)){
                     found = false;
-                    return BREAK;
+                    return INTERRUPT;
                 }else{
                     found = false;
-                    return _DONE_;
+                    return _RELEASE_;
                 }
             }else
                 return IGNORE;
