@@ -8,14 +8,15 @@ import library.operands.*;
 import library.operations.*;
 import library.constants.*;
 import library.functions.*;
+import library.logical.*;
 
 public class Main {
     public static void main(String[] args) {
         Parser parser = new Parser();
         addScanners();
-        operand[] results = parser.Evaluate("(4-4i) - (2 + 2i)");
+        operand[] results = parser.Evaluate("sin 90");
         for(operand op : results){
-            System.out.println(op.displayString());
+            System.out.println(op.getString());
         }
         System.out.println();
     }
@@ -35,5 +36,7 @@ public class Main {
         global.pushScanner(new euler());
         global.pushScanner(new sumAll());
         global.pushScanner(new multiplication());
+        global.pushScanner(new exponent());
+        global.pushScanner(new equality());
     }
 }

@@ -1,15 +1,14 @@
 package library.functions;
 
+import core.interfaces.groupOperand;
 import core.interfaces.operand;
-import core.interfaces.operation;
-import core.interfaces.scanner;
-
+import library.scan_operation_adapter;
 import library.operands.real;
 
 import static core.CONSTANTS.*;
 import static library.CONSTANTS.*;
 
-public class sumAll implements scanner, operation{
+public class sumAll extends scan_operation_adapter{
 
     StringBuilder builder = new StringBuilder();
     boolean scanning = false;
@@ -23,50 +22,34 @@ public class sumAll implements scanner, operation{
 
     @Override
     public int getOperationType() {
-        return OPERATION_TYPE_FUNCTION;
+        return OPERATION_TYPE_UNARY;
     }
 
     @Override
-    public int getResultFlag() {
-        return RESULT_SINGLE;
+    public operand[] getResult() {
+        return new operand[]{
+            opnd
+        };
     }
 
     @Override
-    public operand getSingleResult() {
-        return opnd;
-    }
-
-    @Override
-    public operand[] getMultipleResult() {
-        return null;
-    }
-
-    @Override
-    public void function(operand[] params) {
+    public void function(groupOperand params) {
         double sum = 0;
-        for (operand op : params){
+        for (operand op : params.getOperands()){
             sum += ((real)op).value;
         }
-        opnd = params[0];
+        opnd = params.getOperands()[0];
         ((real)opnd).value = sum;
-    }
-
-    @Override
-    public void function(operand left, operand right) {
-        // empty
-    }
-
-    @Override
-    public void function(operand single) {
-        // empty
     }
 
     @Override
     public int scan(char c) {
         if (Character.isLetter(c)){
-            if (!scanning)
-                scanning = true;
             builder.append(c);
+            if (!scanning){
+                scanning = true;
+                return LOCK;
+            }
             return CONTINUE;
         }else {
             if (scanning){
@@ -74,9 +57,9 @@ public class sumAll implements scanner, operation{
                 scanning = false;
                 builder.setLength(0);
                 if (name.equalsIgnoreCase("sumall")){
-                    return _DONE_;
+                    return _RELEASE_;
                 }
-                return BREAK;
+                return INTERRUPT;
             }
             return IGNORE;
         }

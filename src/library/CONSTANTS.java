@@ -9,7 +9,8 @@ public class CONSTANTS {
                         IOTA = 2,
                         STRING = 3,
                         BRACKET = 4,
-                        COMPLEX_NUMBER = 5;
+                        COMPLEX_NUMBER = 5,
+                        VARIABLE = 6;
 
         //precedence constant
         //these constants are only for convenience and is not required
@@ -23,6 +24,7 @@ public class CONSTANTS {
 
         //exception constants
         public static final int
-                        EXCEPTION_INCOMPATIBLE_OPERAND_UNARY = 1,
-                        EXCEPTION_INVALID_PARAMETERS_TO_FUNCTIONS = 2;
+                        EXCEPTION_INCOMPATIBLE_OPERAND_UNARY = 6,
+                        EXCEPTION_INVALID_PARAMETERS_TO_FUNCTIONS = 7,
+                        EXCEPTION_INVALID_IDENTIFIER = 8;
 }

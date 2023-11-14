@@ -1,11 +1,11 @@
 package library.constants;
 
-import core.interfaces.scanner;
+import library.scan_adapter;
 import library.operands.real;
 
 import static core.CONSTANTS.*;
 
-public class pi implements scanner{
+public class pi extends scan_adapter{
 
     StringBuilder builder = new StringBuilder();
     boolean scanning = false;
@@ -13,12 +13,14 @@ public class pi implements scanner{
     @Override
     public int scan(char c) {
         if (c == 'π' && !scanning){
-            return DONE;
+            return FINISH;
         }
         if ((c + "").matches("(?i:[a-z])")){
-            if (!scanning)
-                scanning = true;
             builder.append(c);
+            if (!scanning){
+                scanning = true;
+                return LOCK;
+            }
             return CONTINUE;
         }else {
             if (scanning){
@@ -26,9 +28,9 @@ public class pi implements scanner{
                 scanning = false;
                 builder.setLength(0);
                 if (name.equalsIgnoreCase("pi")){
-                    return _DONE_;
+                    return _RELEASE_;
                 }
-                return BREAK;
+                return INTERRUPT;
             }
             return IGNORE;
         }

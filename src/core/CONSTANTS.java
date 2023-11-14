@@ -6,12 +6,16 @@ public class CONSTANTS {
         //scanner states
         public static final int 
                         CONTINUE = 1,
-                        IGNORE = 2,
-                        DONE = 3,
-                        _DONE_ = 4,
-                        BREAK = 5;
+                        LOCK = 2,
+                        _LOCK_ = 3,
+                        IGNORE = 4,
+                        RELEASE = 5,
+                        _RELEASE_ = 6,
+                        INTERRUPT = 7,
+                        FINISH = 8;
 
-        //operand types
+        //operand types 
+        //deprecated
         public static final int
                         OPERAND_TYPE_SINGULAR = 1,
                         OPERAND_TYPE_GROUP = 2;
@@ -19,13 +23,19 @@ public class CONSTANTS {
         //operation types
         public static final int 
                         OPERATION_TYPE_BINARY = 1,
-                        OPERATION_TYPE_UNARY = 2,
-                        OPERATION_TYPE_FUNCTION = 4;
+                        OPERATION_TYPE_UNARY = 2;
+                        // OPERATION_TYPE_FUNCTION = 3;
+
+        public static final char 
+                        EOF = '\0',
+                        NEW_LINE = '\n',
+                        SPACE = ' ';
+
         
         //result flags
-        public static final int
-                        RESULT_SINGLE = 1,
-                        RESULT_MULTIPLE = 2;
+        // public static final int
+        //                 RESULT_SINGLE = 1,
+        //                 RESULT_MULTIPLE = 2;
 
         //Exception constants
         public static final int

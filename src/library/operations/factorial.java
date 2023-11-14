@@ -1,15 +1,13 @@
 package library.operations;
 
 import core.interfaces.operand;
-import core.interfaces.operation;
-import core.interfaces.scanner;
-
+import library.scan_operation_adapter;
 import library.operands.real;
 
 import static core.CONSTANTS.*;
 import static library.CONSTANTS.*;
 
-public class factorial implements scanner, operation{
+public class factorial extends scan_operation_adapter{
 
     operand resultOperand;
 
@@ -24,28 +22,8 @@ public class factorial implements scanner, operation{
     }
 
     @Override
-    public int getResultFlag() {
-        return RESULT_SINGLE;
-    }
-
-    @Override
-    public operand getSingleResult() {
-        return resultOperand;
-    }
-
-    @Override
-    public operand[] getMultipleResult() {
-        return null;
-    }
-
-    @Override
-    public void function(operand[] params) {
-        //empty
-    }
-
-    @Override
-    public void function(operand left, operand right) {
-        //empty
+    public operand[] getResult() {
+        return new operand[]{resultOperand};
     }
 
     @Override
@@ -62,7 +40,7 @@ public class factorial implements scanner, operation{
     @Override
     public int scan(char c) {
         if (c == '!'){
-            return DONE;
+            return FINISH;
         }
         return IGNORE;
     }
@@ -71,5 +49,4 @@ public class factorial implements scanner, operation{
     public Object getScannedObject() {
         return this;
     }
-    
 }

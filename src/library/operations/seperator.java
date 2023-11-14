@@ -1,13 +1,12 @@
 package library.operations;
 
 import core.interfaces.operand;
-import core.interfaces.operation;
-import core.interfaces.scanner;
+import library.scan_operation_adapter;
 
 import static core.CONSTANTS.*;
 import static library.CONSTANTS.*;
 
-public class seperator implements scanner, operation{
+public class seperator extends scan_operation_adapter{
     operand left, right;
 
     @Override
@@ -21,23 +20,8 @@ public class seperator implements scanner, operation{
     }
 
     @Override
-    public int getResultFlag() {
-        return RESULT_MULTIPLE;
-    }
-
-    @Override
-    public operand getSingleResult() {
-        return null;
-    }
-
-    @Override
-    public operand[] getMultipleResult() {
+    public operand[] getResult() {
         return new operand[]{left, right};
-    }
-
-    @Override
-    public void function(operand[] params) {
-        // empty
     }
 
     @Override
@@ -47,14 +31,9 @@ public class seperator implements scanner, operation{
     }
 
     @Override
-    public void function(operand single) {
-        // empty
-    }
-
-    @Override
     public int scan(char c) {
         if (c == ',')
-            return DONE;
+            return FINISH;
         
         return IGNORE;
     }
@@ -63,5 +42,4 @@ public class seperator implements scanner, operation{
     public Object getScannedObject() {
         return this;
     }
-    
 }

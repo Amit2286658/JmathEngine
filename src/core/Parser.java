@@ -1,6 +1,7 @@
 package core;
 
 import core.interfaces.operand;
+import core.interfaces.groupOperand;
 import core.interfaces.operation;
 import core.interfaces.scanner;
 
@@ -11,7 +12,6 @@ public class Parser {
     public operand[] Evaluate(String expression) {
 
         Stack<Object> st = createStack(expression);
-        st = compileTheGroups(st);
         st = convertToPostFix(st);
         Stack<operand> operands = postFixSolver(st);
 
@@ -30,45 +30,46 @@ public class Parser {
         // the wildcard
         Stack<Object> parts = new Stack<>();
 
+        StringBuilder builder = new StringBuilder();
+        boolean isGroup = false;
+
         scanner curScanner = null;
 
-        int resetCondition = DONE, resetIndex = 0;
+        int resetCondition = RELEASE, resetIndex = 0;
 
         char[] arr = expression.toCharArray();
 
         outer_loop: 
         for (int i = 0; i <= arr.length; i++) {
-            char c = (i != arr.length) ? arr[i] : '?';
+            char c = (i != arr.length) ? arr[i] : EOF;
 
             if (curScanner == null) {
-                if (resetCondition != BREAK)
+                if (resetCondition != INTERRUPT)
                     scanners.reset();
                 while (scanners.hasNext()) {
                     scanner scn = scanners.pop();
                     int status = scn.scan(c);
                     switch (status) {
-                        case CONTINUE -> {
+                        case _LOCK_ :
+                            isGroup = true;
+                        case LOCK : 
                             curScanner = scn;
                             resetIndex = i;
                             continue outer_loop;
-                        }
-                        case DONE -> {
+                        case FINISH :
                             parts.push(scn.getScannedObject());
-                            resetCondition = DONE;
+                            resetCondition = RELEASE;
                             continue outer_loop;
-                        }
-                        case IGNORE -> {
-                            continue;
-                        }
-                        default -> {
+                        case IGNORE :
+                            continue;                      
+                        default :
                             throw new ExpressionException(unknown_st_init +
                                 "\ni => " + i + "\nstatus => " + 
                                 status + "\nscanner => " + scn.getClass(),
                                 EXCEPTION_STEP_CREATE_SUBSTEP_INIT);
-                        }
                     }
                 }
-                if (c == '?' || Character.isWhitespace(c))
+                if (checkSkippingChars(c))
                     continue;
                 throw new ExpressionException(token_cl_no_1 + c + token_cl_no_2, 
                     EXCEPTION_STEP_CREATE_SUBSTEP_INIT);
@@ -79,24 +80,41 @@ public class Parser {
 
             switch (status) {
                 case CONTINUE -> {
+                    if (isGroup)
+                        builder.append(c);
                     continue;
                 }
-                case _DONE_ -> {
+                case _RELEASE_ -> {
+                    if (isGroup){
+                        Stack<Object> sub_parts = createStack(builder.toString());
+                        Object[] subs = sub_parts.getAsList();
+                        curScanner.pushSubCompiledParts(subs);
+                        builder.setLength(0);
+                        isGroup = false;
+                    }
                     i--;
                     parts.push(curScanner.getScannedObject());
-                    resetCondition = _DONE_;
+                    resetCondition = _RELEASE_;
                     curScanner = null;
                 }
-                case DONE -> {
+                case RELEASE -> {
+                    if (isGroup){
+                        Stack<Object> sub_parts = createStack(builder.toString());
+                        Object[] subs = sub_parts.getAsList();
+                        curScanner.pushSubCompiledParts(subs);
+                        builder.setLength(0);
+                        isGroup = false;
+                    }
                     parts.push(curScanner.getScannedObject());
-                    resetCondition = DONE;
+                    resetCondition = RELEASE;
                     curScanner = null;
                 }
-                case BREAK -> {
+                case INTERRUPT -> {
                     i = --resetIndex;
                     resetIndex = 0;
-                    resetCondition = BREAK;
+                    resetCondition = INTERRUPT;
                     curScanner = null;
+                    isGroup = false;
                 }
                 default -> {
                     throw new ExpressionException(unknown_st_sc +
@@ -111,45 +129,22 @@ public class Parser {
         return parts;
     }
 
-    private Stack<Object> compileTheGroups(Stack<Object> types){
-        while (types.hasNext()){
-            Object obj = types.pop();
-            if (obj instanceof operand op 
-                    && op.getOperandType() == OPERAND_TYPE_GROUP){
-                String exp = op.getString();
-                Stack<Object> objs = compileTheGroups(createStack(exp));
-                
-                Object[] opnd = objs.getAsList();
-                op.pushCompiledObjects(opnd);
-            }
-        }
-        types.reset();
-        return types;
-    }
-
     private Stack<Object> convertToPostFix(Stack<Object> types) {
         Stack<Object> list = new Stack<>();
         Stack<operation> operators = new Stack<>();
         outer_loop: 
         while (types.hasNext()) {
             Object obj = types.pop();
-            if (obj instanceof operand op) {
-                if (op.getOperandType() == OPERAND_TYPE_GROUP){
-                    Stack<Object> group_op_list = new Stack<>(op.getCompiledObjects());
-                    group_op_list = group_op_list.reverse();
-                    group_op_list = convertToPostFix(group_op_list);
+            if (obj instanceof operand op && !(obj instanceof groupOperand)) {    
+                list.push(obj);
+            } else if(obj instanceof groupOperand op){
+                Stack<Object> group_op_list = new Stack<>(op.getCompiledObjects());
+                group_op_list = group_op_list.reverse();
+                group_op_list = convertToPostFix(group_op_list);
 
-                    if (op.pushOnStack()) {
-                        while (group_op_list.hasNext()) {
-                            list.push(group_op_list.pop());
-                        }
-                    } else {
-                        op.pushCompiledObjects(group_op_list.getAsList());
-                        list.push(op);
-                    }
-                }else
-                    list.push(obj);
-            }else {
+                op.pushPostFixedObjects(group_op_list.getAsList());
+                list.push(op);
+            } else {
                 operation obj_op = (operation) obj;
                 if (operators.getLength() == 0) {
                     operators.push(obj_op);
@@ -183,109 +178,86 @@ public class Parser {
                     case OPERATION_TYPE_BINARY -> {
                         operand right = (operand) operands.pop();
                         operand left = (operand) operands.pop();
+                        int state = 4;
 
-                        if (left.getOperandType() == OPERAND_TYPE_GROUP){
-                            Stack<Object> obs = new Stack<>(left.getCompiledObjects());
-                            Stack<operand> opnds = postFixSolver(obs.reverse());
-
-                            if (!left.pushOnStack()){
-                                //operand[] oprnds = opnds.getAsList();
-                                operand[] oprnds = new operand[opnds.getLength()];
-                                int counter = 0;
-                                while(opnds.hasNext()){
-                                    oprnds[counter] = (operand)opnds.pop();
-                                    counter++;
-                                }
-                                left.pushSolvedOperands(oprnds);
-                            }else {
-                                if (opnds.getLength() > 1)
-                                    throw new ExpressionException(multiple_op_in_operations,
-                                        EXCEPTION_STEP_SOLVE);
-                                left = opnds.pop();
-                            }
-                        }
-                        if (right.getOperandType() == OPERAND_TYPE_GROUP){
-                            Stack<Object> obs = new Stack<>(right.getCompiledObjects());
-                            Stack<operand> opnds = postFixSolver(obs.reverse());
-
-                            if (!right.pushOnStack()){
-                                //operand[] oprnds = opnds.getAsList();
-                                operand[] oprnds = new operand[opnds.getLength()];
-                                int counter = 0;
-                                while(opnds.hasNext()){
-                                    oprnds[counter] = (operand)opnds.pop();
-                                    counter++;
-                                }
-                                right.pushSolvedOperands(oprnds);
-                            }else {
-                                if (opnds.getLength() > 1)
-                                    throw new ExpressionException(multiple_op_in_operations,
-                                        EXCEPTION_STEP_SOLVE);
-                                right = opnds.pop();
+                        if (left instanceof groupOperand left_gp){
+                            operand[] oprnds = groupOperandSolver(left_gp);
+                            if (oprnds.length == 1 && left_gp.pushOnStack_whenSingleElement())
+                                left = oprnds[0];
+                            else {
+                                left_gp.pushEvaluatedObjects(oprnds);
+                                state = 1;
                             }
                         }
 
-                        op.function(left, right);
+                        if (right instanceof groupOperand right_gp){
+                            operand[] oprnds = groupOperandSolver(right_gp);
+                            if (oprnds.length == 1 && right_gp.pushOnStack_whenSingleElement())
+                                right = oprnds[0];
+                            else {
+                                right_gp.pushEvaluatedObjects(oprnds);
+                                state = state == 1 ? 3 : 2;
+                            }
+                        }
+
+                        switch(state){
+                            case 4 -> op.function(left, right);
+                            case 3 -> op.function((groupOperand)left, (groupOperand)right);
+                            case 2 -> op.function(left, (groupOperand)right);
+                            case 1 -> op.function((groupOperand)left, right);
+                        }
                     }
                     case OPERATION_TYPE_UNARY -> {
                         operand single = (operand) operands.pop();
-
-                        if (single.getOperandType() == OPERAND_TYPE_GROUP){
-                            Stack<Object> obs = new Stack<>(single.getCompiledObjects());
-                            Stack<operand> opnds = postFixSolver(obs.reverse());
-
-                            if (!single.pushOnStack()){
-                                //operand[] oprnds = opnds.getAsList();
-                                operand[] oprnds = new operand[opnds.getLength()];
-                                int counter = 0;
-                                while(opnds.hasNext()){
-                                    oprnds[counter] = (operand)opnds.pop();
-                                    counter++;
-                                }
-                                single.pushSolvedOperands(oprnds);
-                            }else {
-                                if (opnds.getLength() > 1)
-                                    throw new ExpressionException(multiple_op_in_operations,
-                                        EXCEPTION_STEP_SOLVE);
-                                single = opnds.pop();
+                        int state = 0;
+                        if (single instanceof groupOperand single_gp){
+                            operand[] oprnds = groupOperandSolver(single_gp);
+                            if (oprnds.length == 1 && single_gp.pushOnStack_whenSingleElement())
+                                single = oprnds[0];
+                            else {
+                                single_gp.pushEvaluatedObjects(oprnds);
+                                state = 1;
                             }
                         }
 
-                        op.function(single);
-                    }
-                    case OPERATION_TYPE_FUNCTION -> {
-                        operand bckt = operands.pop();
-                        if (bckt.getOperandType() == OPERAND_TYPE_GROUP){
-                            Stack<Object> obs = new Stack<>(bckt.getCompiledObjects());
-                            Stack<operand> opnds = postFixSolver(obs.reverse());
-
-                            operand[] oprnds = new operand[opnds.getLength()];
-                            int counter = 0;
-                            while(opnds.hasNext()){
-                                oprnds[counter] = (operand)opnds.pop();
-                                counter++;
-                            }
-                            op.function(oprnds);
-                        }else 
-                            op.function(bckt);
+                        if (state == 1)
+                            op.function((groupOperand)single);
+                        else
+                            op.function(single);
                     }
                 }
-                int resultStatus = op.getResultFlag();
-
-                switch (resultStatus) {
-                    case RESULT_SINGLE -> {
-                        operand opnd = op.getSingleResult();
-                        operands.push(opnd);
-                    }
-                    case RESULT_MULTIPLE -> {
-                        for (operand opnd : op.getMultipleResult()) {
-                            operands.push(opnd);
-                        }
-                    }
+                
+                for (operand opnd : op.getResult()) {
+                    operands.push(opnd);
                 }
             }else
                 operands.push((operand) obj);
         }
         return operands.reverse();
+    }
+
+    private operand[] groupOperandSolver(groupOperand op){
+        Stack<Object> obs = new Stack<>(op.getCompiledObjects());
+        Stack<operand> opnds = postFixSolver(obs.reverse());
+
+        operand[] oprnds = new operand[opnds.getLength()];
+        int counter = 0;
+        while (opnds.hasNext()) {
+            oprnds[counter] = (operand) opnds.pop();
+            counter++;
+        }
+        if (oprnds.length == 1 && op.pushOnStack_whenSingleElement()){
+            if (oprnds[0] instanceof groupOperand){
+                return groupOperandSolver((groupOperand)oprnds[0]);
+            }
+            return new operand[]{oprnds[0]};
+        }
+        return oprnds;
+    }
+
+    private boolean checkSkippingChars(char c){
+        if (c == EOF || c == NEW_LINE || c == SPACE)
+            return true;
+        return false;
     }
 }
